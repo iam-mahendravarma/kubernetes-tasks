@@ -1,6 +1,4 @@
-Here’s a polished **README.md** version of your Day-05 Kubernetes learning notes:
 
-```markdown
 # Day-05 – Kubernetes Learning
 
 ## 📘 Topics Covered
