@@ -1,152 +1,126 @@
-Day-05 – Kubernetes Learning
+Here’s a polished **README.md** version of your Day-05 Kubernetes learning notes:
 
-Topics Covered
+```markdown
+# Day-05 – Kubernetes Learning
 
-MySQL Pod Deployment
+## 📘 Topics Covered
+- MySQL Pod Deployment
+- ClusterIP Service Configuration
+- CrashLoopBackOff Troubleshooting
+- Environment Variables in Containers
+- Internal Service Communication
+- Database Connectivity Testing
 
-ClusterIP Service Configuration
+---
 
-CrashLoopBackOff Troubleshooting
+## 🎯 Objective
+Deploy a **MySQL 8.0 container** inside Kubernetes and expose it internally using a **ClusterIP Service**.
 
-Environment Variables in Containers
+---
 
-Internal Service Communication
+## 🐳 MySQL Pod Deployment
+- Created two separate YAML files:
+  - `mysql-pod.yaml` → MySQL Pod
+  - `mysql-service.yaml` → ClusterIP Service
+- Deployed the Pod:
+  ```bash
+  kubectl apply -f mysql-pod.yaml
+  ```
 
-Database Connectivity Testing
+### ❌ Issue Faced – CrashLoopBackOff
+- Pod status: `CrashLoopBackOff`
+- Verified with:
+  ```bash
+  kubectl get pods
+  kubectl describe pod mysql-db-pod
+  kubectl logs mysql-db-pod
+  ```
+- **Root Cause:**  
+  The official MySQL 8.0 image requires a **root password** during initialization.  
+  Missing environment variable → container exited with error (Exit Code 1) → Kubernetes restarted repeatedly → CrashLoopBackOff.
 
-MySQL Pod Deployment
-Objective
+### ✅ Solution – Added Root Password
+- Updated Pod configuration with required environment variable:
+  ```yaml
+  env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: my-secret-pw
+  ```
+- Recreated Pod:
+  ```bash
+  kubectl delete pod mysql-db-pod
+  kubectl apply -f mysql-pod.yaml
+  ```
+- Verified:
+  ```bash
+  kubectl get pods
+  ```
+- Status: `1/1 Running`
 
-Deploy a MySQL 8.0 container inside Kubernetes and expose it internally using a ClusterIP Service.
+---
 
-Created two separate YAML files:
+## 🌐 ClusterIP Service Configuration
+- Created a ClusterIP Service (`mysql-service.yaml`).
+- Applied:
+  ```bash
+  kubectl apply -f mysql-service.yaml
+  ```
+- Verified:
+  ```bash
+  kubectl get svc
+  ```
+- Service type: **ClusterIP**
 
-One for MySQL Pod
+---
 
-One for ClusterIP Service
+## 🔍 Testing Database Connectivity
+- Created a temporary MySQL client Pod:
+  ```bash
+  kubectl run mysql-client --rm -it --image=mysql:8.0 -- bash
+  ```
+- Connected to MySQL:
+  ```bash
+  mysql -h mysql-service -u root -p
+  ```
+- Entered root password → Successfully accessed MySQL shell.
 
-Deployed the Pod using:
+---
 
-kubectl apply -f mysql-pod.yaml
-
-Issue Faced – CrashLoopBackOff
-
-After deployment, the Pod status showed:
-
-CrashLoopBackOff
-
-
-Verified the status:
-
-kubectl get pods
-
-
-Checked detailed information:
-
-kubectl describe pod mysql-db-pod
-
-
-Checked logs:
-
-kubectl logs mysql-db-pod
-
-Root Cause
-
-The official MySQL 8.0 image requires a root password during initialization.
-
-Since the environment variable for root password was not defined initially, the container exited with an error (Exit Code 1). Kubernetes restarted the container multiple times, resulting in CrashLoopBackOff.
-
-Solution – Added Root Password
-
-Updated the Pod configuration by adding the required environment variable for MySQL root password.
-
-Recreated the Pod:
-
-kubectl delete pod mysql-db-pod
-kubectl apply -f mysql-pod.yaml
-
-
-Verified the status:
-
-kubectl get pods
-
-
-Pod status changed to:
-
-1/1 Running
-
-ClusterIP Service Configuration
-
-Created a ClusterIP Service to expose MySQL internally within the cluster.
-
-Applied the Service:
-
-kubectl apply -f mysql-service.yaml
-
-
-Verified Service creation:
-
-kubectl get svc
-
-
-Confirmed that the Service type is:
-
-ClusterIP
-
-Testing Database Connectivity
-
-Since ClusterIP is accessible only inside the cluster, created a temporary MySQL client Pod.
-
-Command used:
-
-kubectl run mysql-client --rm -it --image=mysql:8.0 -- bash
-
-
-Inside the client Pod, connected to MySQL using:
-
-mysql -h mysql-service -u root -p
-
-
-After entering the root password, successfully accessed the MySQL shell.
-
-Internal Communication Flow
-
+## 🔄 Internal Communication Flow
+```
 MySQL Client Pod → ClusterIP Service → MySQL Pod
+```
 
-Pod Label: db=mysql
+- **Pod Label:** `db=mysql`  
+- **Service Selector:** `db=mysql`  
+- **Access Method:** `mysql-service:3306`  
+- Communication via **internal Kubernetes DNS**
 
-Service Selector: db=mysql
+---
 
-Access Method: mysql-service:3306
+## 📚 Key Learnings
+- MySQL container requires mandatory environment variables during initialization.
+- Missing required variables → CrashLoopBackOff.
+- ClusterIP Services enable internal communication within the cluster.
+- Service name acts as internal DNS.
+- Labels and selectors must match for proper traffic routing.
 
-Communication happens through internal Kubernetes DNS
+---
 
-Key Learnings
+## 🛡️ Production Best Practices
+- Use **Kubernetes Secrets** instead of plain text passwords.
+- Use **Persistent Volumes** for database storage.
+- Deploy MySQL using **Deployment** or **StatefulSet** for better management.
+- Add **resource requests and limits**.
+- Avoid running databases as a single standalone Pod in production.
 
-MySQL container requires mandatory environment variables during initialization.
+---
 
-Missing required variables can cause CrashLoopBackOff.
+## ✅ Status
+| Component        | Status       |
+|------------------|--------------|
+| MySQL Pod        | ✅ Running   |
+| ClusterIP Service| ✅ Created   |
+| DB Connectivity  | ✅ Verified  |
+```
 
-ClusterIP Services enable internal communication within the cluster.
-
-Service name acts as internal DNS for communication.
-
-Labels and Selectors must match for proper traffic routing.
-
-Production Best Practices
-
-Use Kubernetes Secrets instead of plain text passwords.
-
-Use Persistent Volumes for database storage.
-
-Deploy MySQL using Deployment or StatefulSet for better management.
-
-Add resource requests and limits.
-
-Avoid running databases as a single standalone Pod in production.
-
-Status
-Component	Status
-MySQL Pod	✅ Running
-ClusterIP Service	✅ Created
-DB Connectivity	✅ Verified
